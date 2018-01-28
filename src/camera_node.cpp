@@ -8,23 +8,44 @@
 
 #include <cv_bridge/cv_bridge.h>
 #include <vector>
+#include <string>
+
+// dictionary containing camera names and corresponding indexes
+std::map<std::string, int> _camera_dict{{"face", 1}, {"chin", 0}, {"right", 0}, {"left", 1}, {"rearDown", 0}}; 
 
 int main(int argc, char *argv[])
 {
-    //TODO init camera_name from argv[1]
-    std::string camera_name;
-    std::string camera_node_name{"camera_"+camera_name+"_node"};
+    // initializing camera_name trough argument
+    if (argc > 2)
+    {
+        camera_name = std::string(argv[1]);
+    }
+    else
+    {
+        ROS_ERROR("You should launch the cameras passing the camera name. i.e., roslaunch ias_unitree_camera unitree_camera.launch camera_name:=current_camera_name, where current_camera_name must be [head/chin/left/right/rearDown].");
+        exit(1);
+    }
 
     // node init
+    std::string camera_node_name{"camera_" + camera_name + "_node"};
     ros::init(argc, argv, camera_node_name);
     ros::NodeHandle n("~");
 
     // init UnitreeCamera object by camera index
     int camera_idx;
-    n.getParam("camera_idx", camera_idx);
-    ROS_INFO("Connecting to camera");
+    if (_camera_dict.find(camera_name) != _camera_dict.end()) 
+    {
+        camera_idx = _camera_dict[camera_name];
+    } 
+    else 
+    {
+        ROS_ERROR("camera_name [%s] does not exists. Choose between [head/chin/left/right/rearDown].", camera_name);
+        exit(1);
+    }
+
+    ROS_WARN("Connecting to camera");
     UnitreeCamera cam(camera_idx);
-    ROS_INFO("Camera connected");
+    ROS_WARN("Camera connected");
 
     // check if the camera has been started correctly
     if(!cam.isOpened())
@@ -39,8 +60,8 @@ int main(int argc, char *argv[])
     n.getParam("publish_rect_rgb", publish_rect_rgb);
     n.getParam("publish_raw_rgb", publish_raw_rgb);
     n.getParam("publish_depth", publish_depth);
-    n.getParam("publish_pointcloud", publish_pointcloud);
     n.getParam("publish_camera_info", publish_camera_info);
+    n.getParam("publish_pointcloud", publish_pointcloud);
 
     int image_width, image_height, fps;
 
@@ -63,8 +84,8 @@ int main(int argc, char *argv[])
     if (publish_rect_rgb)
     {
         cam.setRectFrameSize(cv::Size(frameSize.width >> 2, frameSize.height >> 1));
-        left_rect_image_pub = n.advertise<sensor_msgs::Image>("left_rect_image_" + camera_name, 10);
-        right_rect_image_pub = n.advertise<sensor_msgs::Image>("right_rect_image_" + camera_name, 10);
+        left_rect_image_pub = n.advertise<sensor_msgs::Image>("left_rect_image" , 10);
+        right_rect_image_pub = n.advertise<sensor_msgs::Image>("right_rect_image" , 10);
     }
 
     // Raw images
@@ -77,8 +98,8 @@ int main(int argc, char *argv[])
         // set raw image sizes and fps
         cam.setRawFrameSize(frameSize); ///< set camera frame size
         cam.setRawFrameRate(fps);       ///< set camera camera fps
-        left_raw_image_pub = n.advertise<sensor_msgs::Image>("left_raw_image_" + camera_name, 10);
-        right_raw_image_pub = n.advertise<sensor_msgs::Image>("right_raw_image_" + camera_name, 10);
+        left_raw_image_pub = n.advertise<sensor_msgs::Image>("left_raw_image", 10);
+        right_raw_image_pub = n.advertise<sensor_msgs::Image>("right_raw_image" , 10);
     }
 
     // Depth Image
@@ -88,7 +109,7 @@ int main(int argc, char *argv[])
     std::chrono::microseconds t_depth;
     if (publish_depth)
     {
-        depth_image_pub = n.advertise<sensor_msgs::Image>("depth_image_" + camera_name, 10);  
+        depth_image_pub = n.advertise<sensor_msgs::Image>("depth_image" , 10);  
     }
 
     // camera info
@@ -97,7 +118,7 @@ int main(int argc, char *argv[])
     sensor_msgs::CameraInfo cam_info;
     if (publish_camera_info)
     {
-        camera_info_pub = n.advertise<sensor_msgs::CameraInfo>("camera_info_" + camera_name, 10);
+        camera_info_pub = n.advertise<sensor_msgs::CameraInfo>("camera_info", 10);
     }
 
     // Pointcloud
@@ -107,7 +128,7 @@ int main(int argc, char *argv[])
     std::chrono::microseconds t_pcd;
     if (publish_pointcloud)
     {
-        pcd_pub = n.advertise<sensor_msgs::PointCloud2>("pcd_" + camera_name, 10);
+        pcd_pub = n.advertise<sensor_msgs::PointCloud2>("pointcloud", 10);
     }
 
     // start camera capture
@@ -115,7 +136,6 @@ int main(int argc, char *argv[])
     cam.startStereoCompute(); ///< start disparity computing
 
     int seq;
-    // TODO complete the publish logic. remember timestamp
     while(ros::ok() && cam.isOpened()){
         image_header.stamp = ros::Time::now();
         image_header.seq = seq;
@@ -195,9 +215,9 @@ int main(int argc, char *argv[])
         {
             // get rgb colored poincloud
             if(cam.getPointCloud(pcl_vec, t_pcd)){
-                
+                // TODO transform pcd from pcl to ros
             }
-            pcd_pub.publish(pcd_msg);
+            // pcd_pub.publish(pcd_msg);
         }
 
         seq++;

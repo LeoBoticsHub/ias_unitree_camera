@@ -1,9 +1,6 @@
 <?xml version="1.0" ?>
 <launch>
 
-    <!-- camera_idx: 1-face, 2-chin, 3-left, 4-right, 5-rearDown -->
-    <arg name="camera_idx" default="0" />
-
     <arg name="publish_rect_rgb" default="true" />
     <arg name="publish_raw_rgb" default="true" />
     <arg name="publish_depth" default="true" />
@@ -13,10 +10,10 @@
     <arg name="fps" default="30" />
     <arg name="image_width" default="1856" />
     <arg name="image_height" default="800" />
+    <arg name="camera_name" default="None" />
 
     <!-- Ultrasound node -->
-    <node name="camera_node" pkg="ias_unitree_camera" type="camera_node" respawn="false" output="screen">
-        <param name="camera_idx" value="$(arg camera_idx)" />
+    <node name="camera_$(arg camera_name)" pkg="ias_unitree_camera" type="camera_node" args="$(arg camera_name)" respawn="false" output="screen">
         <param name="publish_rect_rgb" value="$(arg publish_rect_rgb)" />
         <param name="publish_raw_rgb" value="$(arg publish_raw_rgb)" />
         <param name="publish_depth" value="$(arg publish_depth)" />
