@@ -1,11 +1,11 @@
 <?xml version="1.0" ?>
 <launch>
 
-    <arg name="publish_rect_rgb" default="true" />
-    <arg name="publish_raw_rgb" default="true" />
-    <arg name="publish_depth" default="true" />
-    <arg name="publish_pointcloud" default="true" />
-    <arg name="publish_camera_info" default="true" />
+    <arg name="publish_rect_rgb" default="false" />
+    <arg name="publish_raw_rgb" default="false" />
+    <arg name="publish_depth" default="false" />
+    <arg name="publish_pointcloud" default="false" />
+    <arg name="publish_camera_info" default="false" />
     
     <arg name="fps" default="30" />
     <arg name="image_width" default="1856" />
@@ -18,6 +18,7 @@
         <param name="publish_raw_rgb" value="$(arg publish_raw_rgb)" />
         <param name="publish_depth" value="$(arg publish_depth)" />
         <param name="publish_camera_info" value="$(arg publish_camera_info)" />
+        <param name="publish_pointcloud" value="$(arg publish_pointcloud)" />
         <param name="fps" value="$(arg fps)" />
         <param name="image_width" value="$(arg image_width)" />
         <param name="image_height" value="$(arg image_height)" />
