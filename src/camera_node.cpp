@@ -6,6 +6,10 @@
 #include <sensor_msgs/PointCloud2.h>
 #include <sensor_msgs/CameraInfo.h>
 
+#include <pcl/point_types.h>
+#include <pcl_conversions/pcl_conversions.h>
+#include <pcl/filters/statistical_outlier_removal.h>
+
 #include <cv_bridge/cv_bridge.h>
 #include <vector>
 #include <string>
@@ -16,6 +20,7 @@ std::map<std::string, int> _camera_dict{{"face", 1}, {"chin", 0}, {"right", 0}, 
 int main(int argc, char *argv[])
 {
     // initializing camera_name trough argument
+    std::string camera_name;
     if (argc > 2)
     {
         camera_name = std::string(argv[1]);
@@ -216,8 +221,34 @@ int main(int argc, char *argv[])
             // get rgb colored poincloud
             if(cam.getPointCloud(pcl_vec, t_pcd)){
                 // TODO transform pcd from pcl to ros
+                pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
+                std::vector<PCLType>::iterator iter;
+                for(iter = pcl_vec.begin(); iter != pcl_vec.end(); iter++){
+                    pcl::PointXYZRGB point;
+
+                    // set point
+                    point.x = (*iter).pts(0);
+                    point.y = (*iter).pts(1);
+                    point.z = (*iter).pts(2);
+                    // set color
+                    point.r = (*iter).clr(2);
+                    point.g = (*iter).clr(1);
+                    point.b = (*iter).clr(0);
+
+                    cloud->points.push_back(point);
+                }
+
+                // statistical outlier removal filtering
+                pcl::StatisticalOutlierRemoval<pcl::PointXYZRGB> sor;
+                sor.setInputCloud(cloud);
+                sor.setMeanK(30);
+                pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_filtered(new pcl::PointCloud<pcl::PointXYZRGB>);
+                sor.filter(*cloud_filtered);
+
+                pcd_msg.header = image_header;
+                pcl::toROSMsg(*cloud_filtered, pcd_msg);
             }
-            // pcd_pub.publish(pcd_msg);
+            pcd_pub.publish(pcd_msg);
         }
 
         seq++;
@@ -227,6 +258,5 @@ int main(int argc, char *argv[])
     cam.stopStereoCompute();  ///< stop disparity computing 
     cam.stopCapture(); ///< stop camera capturing
 
-    ROS_INFO("FINE");
     return 0;
 }

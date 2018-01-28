@@ -28,6 +28,12 @@ else()
   message(FATAL_ERROR "OpenCV Library Not Found")
 endif()
 
+find_package(PCL REQUIRED)
+
+include_directories(${PCL_INCLUDE_DIRS})
+link_directories(${PCL_LIBRARY_DIRS})
+add_definitions(${PCL_DEFINITIONS})
+
 if(CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "x86_64")
   # set(LIBRARY_OUTPUT_PATH lib/amd64/)
   link_directories(lib/amd64/)
@@ -45,7 +51,7 @@ include_directories(
 set(SDK_LIBRARIES unitree_camera tstc_V4L2_xu_camera udev systemlog ${OpenCV_LIBS})
 
 add_executable(camera_node src/camera_node.cpp)
-target_link_libraries(camera_node ${catkin_LIBRARIES} ${SDK_LIBRARIES})
+target_link_libraries(camera_node ${catkin_LIBRARIES} ${SDK_LIBRARIES} ${PCL_LIBRARIES})
 
 install(
   TARGETS camera_node
