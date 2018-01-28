@@ -131,14 +131,19 @@ int main(int argc, char *argv[])
     std::vector<PCLType> pcl_vec;
     ros::Publisher pcd_pub;
     std::chrono::microseconds t_pcd;
+    std::vector<PCLType>::iterator pointcloud_iter;
+    pcl::StatisticalOutlierRemoval<pcl::PointXYZRGB> outlier_removal;
+    outlier_removal.setMeanK(30);
+    // pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud;
+    pcl::PointXYZRGB point;
     if (publish_pointcloud)
     {
         pcd_pub = n.advertise<sensor_msgs::PointCloud2>("pointcloud", 10);
     }
 
     // start camera capture
-    cam.startCapture(); ///< disable image h264 encoding and share memory sharing
-    cam.startStereoCompute(); ///< start disparity computing
+    cam.startCapture(); // disable image h264 encoding and share memory sharing
+    cam.startStereoCompute(); // start disparity computing
 
     int seq;
     while(ros::ok() && cam.isOpened()){
@@ -150,7 +155,6 @@ int main(int argc, char *argv[])
         {
             if(cam.getRectStereoFrame(left_rect_image, right_rect_image, feim_rect_image))
             {
-
                 left_rect_image_msg = cv_bridge::CvImage(image_header, "bgr8", left_rect_image).toImageMsg();
                 left_rect_image_pub.publish(left_rect_image_msg);
 
@@ -220,30 +224,26 @@ int main(int argc, char *argv[])
         {
             // get rgb colored poincloud
             if(cam.getPointCloud(pcl_vec, t_pcd)){
-                // TODO transform pcd from pcl to ros
                 pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
-                std::vector<PCLType>::iterator iter;
-                for(iter = pcl_vec.begin(); iter != pcl_vec.end(); iter++){
-                    pcl::PointXYZRGB point;
-
+                for(pointcloud_iter = pcl_vec.begin(); pointcloud_iter != pcl_vec.end(); pointcloud_iter++)
+                {
                     // set point
-                    point.x = (*iter).pts(0);
-                    point.y = (*iter).pts(1);
-                    point.z = (*iter).pts(2);
+                    point.x = (*pointcloud_iter).pts(0);
+                    point.y = (*pointcloud_iter).pts(1);
+                    point.z = (*pointcloud_iter).pts(2);
                     // set color
-                    point.r = (*iter).clr(2);
-                    point.g = (*iter).clr(1);
-                    point.b = (*iter).clr(0);
+                    point.r = (*pointcloud_iter).clr(2);
+                    point.g = (*pointcloud_iter).clr(1);
+                    point.b = (*pointcloud_iter).clr(0);
 
                     cloud->points.push_back(point);
                 }
 
                 // statistical outlier removal filtering
-                pcl::StatisticalOutlierRemoval<pcl::PointXYZRGB> sor;
-                sor.setInputCloud(cloud);
-                sor.setMeanK(30);
                 pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_filtered(new pcl::PointCloud<pcl::PointXYZRGB>);
-                sor.filter(*cloud_filtered);
+
+                outlier_removal.setInputCloud(cloud);
+                outlier_removal.filter(*cloud_filtered);
 
                 pcd_msg.header = image_header;
                 pcl::toROSMsg(*cloud_filtered, pcd_msg);
@@ -255,8 +255,8 @@ int main(int argc, char *argv[])
         ros::spinOnce();
     }
 
-    cam.stopStereoCompute();  ///< stop disparity computing 
-    cam.stopCapture(); ///< stop camera capturing
+    cam.stopStereoCompute();  // stop disparity computing 
+    cam.stopCapture(); // stop camera capturing
 
     return 0;
 }

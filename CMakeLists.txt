@@ -12,7 +12,8 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
     CATKIN_DEPENDS roscpp sensor_msgs cv_bridge 
 )
- 
+
+# -------OPENCV---------
 find_package(OpenCV 4 REQUIRED)
 if(OpenCV_FOUND)
   include_directories(${OpenCV_INCLUDE_DIRS})
@@ -28,12 +29,14 @@ else()
   message(FATAL_ERROR "OpenCV Library Not Found")
 endif()
 
+# -------PCL---------
 find_package(PCL REQUIRED)
 
 include_directories(${PCL_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
 
+# -------UNITREE LIBRARIES---------
 if(CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "x86_64")
   # set(LIBRARY_OUTPUT_PATH lib/amd64/)
   link_directories(lib/amd64/)
