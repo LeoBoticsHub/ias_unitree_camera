@@ -7,18 +7,20 @@
 #include <sensor_msgs/CameraInfo.h>
 
 #include <cv_bridge/cv_bridge.h>
+#include <opencv2/opencv.hpp>
 
 int main(int argc, char *argv[])
 {
-
     // node init
-    ros::init(argc, argv, "camera_node", ros::init_options::AnonymousName);
-    ros::NodeHandle n("camera_node");
+    ros::init(argc, argv, "camera_node");
+    ros::NodeHandle n("~");
 
     // init UnitreeCamera object by camera index
     int camera_idx;
     n.getParam("camera_idx", camera_idx);
+    ROS_INFO("Connecting to camera");
     UnitreeCamera cam(camera_idx);
+    ROS_INFO("Camera connected");
 
     // TODO add enum to choose between cameras names
     std::string camera_name;
@@ -54,8 +56,6 @@ int main(int argc, char *argv[])
 
     // Rectified images
     sensor_msgs::Image rect_image_msg;
-    cv::Mat left_rect_image, right_rect_image, feim_rect_image;
-    std::chrono::microseconds t_rect;
     ros::Publisher left_rect_image_pub, right_rect_image_pub;
     if (publish_rect_rgb)
     {
@@ -66,7 +66,6 @@ int main(int argc, char *argv[])
 
     // Raw images
     sensor_msgs::Image raw_image_msg;
-    cv::Mat left_raw_image, right_raw_image, feim_raw_image;
     std::chrono::microseconds t_raw;
     ros::Publisher left_raw_image_pub, right_raw_image_pub;
     if (publish_raw_rgb)
@@ -80,7 +79,6 @@ int main(int argc, char *argv[])
 
     // Depth Image
     sensor_msgs::Image depth_image_msg;
-    cv::Mat depth;
     ros::Publisher depth_image_pub;
     std::chrono::microseconds t_depth;
     if (publish_depth)
@@ -117,55 +115,61 @@ int main(int argc, char *argv[])
         // Publish rectified image
         if (publish_rect_rgb)
         {
-            if(cam.getRectStereoFrame(left_rect_image, right_rect_image, feim_rect_image))
-            {
-                cv_ptr->encoding = "bgr8";
+            cv::Mat left_rect_image, right_rect_image, feim_rect_image;
+            // std::chrono::microseconds t_rect;
+            // if(cam.getRectStereoFrame(left_rect_image, right_rect_image, feim_rect_image))
+            // {
+            //     cv_ptr->encoding = "bgr8";
 
-                cv_ptr->image = left_rect_image;
-                left_rect_image_pub.publish(cv_ptr->toImageMsg());
+            //     cv_ptr->image = left_rect_image;
+            //     left_rect_image_pub.publish(cv_ptr->toImageMsg());
 
-                cv_ptr->image = right_rect_image;
-                right_rect_image_pub.publish(cv_ptr->toImageMsg());
-            }
-            else
-            {
-                ROS_ERROR("Rect camera image not retrieved at seq: %d", seq);
-            }
+            //     cv_ptr->image = right_rect_image;
+            //     right_rect_image_pub.publish(cv_ptr->toImageMsg());
+            // }
+            // else
+            // {
+            //     ROS_ERROR("Rect camera image not retrieved at seq: %d", seq);
+            // }
         }
 
         // Publish raw image
         if (publish_raw_rgb)
         {
-            if(cam.getStereoFrame(left_raw_image, right_raw_image, t_rect))
-            {
-                cv_ptr->encoding = "bgr8";
+            // cv::Mat left_raw_image, right_raw_image, feim_raw_image;
 
-                cv_ptr->image = left_raw_image;
-                left_raw_image_pub.publish(cv_ptr->toImageMsg());
+            // if(cam.getStereoFrame(left_raw_image, right_raw_image, t_rect))
+            // {
+            //     cv_ptr->encoding = "bgr8";
 
-                cv_ptr->image = right_raw_image;
-                right_raw_image_pub.publish(cv_ptr->toImageMsg());
-            }
-            else
-            {
-                ROS_ERROR("Raw camera image not retrieved at seq: %d", seq);
-            }
+            //     cv_ptr->image = left_raw_image;
+            //     left_raw_image_pub.publish(cv_ptr->toImageMsg());
+
+            //     cv_ptr->image = right_raw_image;
+            //     right_raw_image_pub.publish(cv_ptr->toImageMsg());
+            // }
+            // else
+            // {
+            //     ROS_ERROR("Raw camera image not retrieved at seq: %d", seq);
+            // }
         }
 
         // Publish depth image
         if (publish_depth)
         {
-            if(cam.getDepthFrame(depth, false, t_depth))
-            {
-                cv_ptr->encoding = "mono16";
+            // cv::Mat depth;
 
-                cv_ptr->image = depth;
-                depth_image_pub.publish(depth_image_msg);
-            }
-            else
-            {
-                ROS_ERROR("Depth image not retrieved at seq: %d", seq);
-            }
+            // if(cam.getDepthFrame(depth, false, t_depth))
+            // {
+            //     cv_ptr->encoding = "mono16";
+
+            //     cv_ptr->image = depth;
+            //     depth_image_pub.publish(depth_image_msg);
+            // }
+            // else
+            // {
+            //     ROS_ERROR("Depth image not retrieved at seq: %d", seq);
+            // }
         }
 
         // Publish camera pointcloud
@@ -185,11 +189,6 @@ int main(int argc, char *argv[])
 
         }
 
-
-
-
-
-
         seq++;
         ros::spinOnce();
     }
@@ -197,5 +196,6 @@ int main(int argc, char *argv[])
     cam.stopStereoCompute();  ///< stop disparity computing 
     cam.stopCapture(); ///< stop camera capturing
 
+    ROS_INFO("FINE");
     return 0;
 }

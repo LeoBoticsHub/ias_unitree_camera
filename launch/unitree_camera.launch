@@ -2,21 +2,20 @@
 <launch>
 
     <!-- camera_idx: 1-face, 2-chin, 3-left, 4-right, 5-rearDown -->
-    <arg name="camera_idx" default="1" />
+    <arg name="camera_idx" default="0" />
 
-    <arg name="publish_rect_rgb" default="True" />
-    <arg name="publish_raw_rgb" default="True" />
-    <arg name="publish_depth" default="True" />
-    <arg name="publish_pointcloud" default="True" />
-    <arg name="publish_camera_info" default="True" />
+    <arg name="publish_rect_rgb" default="true" />
+    <arg name="publish_raw_rgb" default="true" />
+    <arg name="publish_depth" default="true" />
+    <arg name="publish_pointcloud" default="true" />
+    <arg name="publish_camera_info" default="true" />
     
     <arg name="fps" default="30" />
     <arg name="image_width" default="1856" />
     <arg name="image_height" default="800" />
 
-
     <!-- Ultrasound node -->
-    <node name="camera_node" pkg="unitree_camera" type="camera_node" respawn="false" output="screen">
+    <node name="camera_node" pkg="ias_unitree_camera" type="camera_node" respawn="false" output="screen">
         <param name="camera_idx" value="$(arg camera_idx)" />
         <param name="publish_rect_rgb" value="$(arg publish_rect_rgb)" />
         <param name="publish_raw_rgb" value="$(arg publish_raw_rgb)" />
@@ -25,7 +24,6 @@
         <param name="fps" value="$(arg fps)" />
         <param name="image_width" value="$(arg image_width)" />
         <param name="image_height" value="$(arg image_height)" />
-
     </node>
 
 </launch>
