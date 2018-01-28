@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.0.2)
 project(ias_unitree_camera)
 
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -pthread")
+
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   sensor_msgs
@@ -8,42 +10,42 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 catkin_package(
-    CATKIN_DEPENDS roscpp sensor_msgs cv_bridge
+    CATKIN_DEPENDS roscpp sensor_msgs cv_bridge 
 )
+ 
+find_package(OpenCV 4 REQUIRED)
+if(OpenCV_FOUND)
+  include_directories(${OpenCV_INCLUDE_DIRS})
+  message(STATUS "OpenCV ${OpenCV_VERSION} FOUND")
+  message(STATUS ${OpenCV_INCLUDE_DIRS})
+  message(STATUS ${OpenCV_LIBS})
+  if(${OpenCV_VERSION_MAJOR} EQUAL 4)
+    add_definitions(-DOPENCV_VERSION_4)
+  elseif(${OpenCV_VERSION_MAJOR} LESS 4)
+    add_definitions(-DOPENCV_VERSION_3)
+  endif()
+else()
+  message(FATAL_ERROR "OpenCV Library Not Found")
+endif()
+
+if(CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "x86_64")
+  # set(LIBRARY_OUTPUT_PATH lib/amd64/)
+  link_directories(lib/amd64/)
+else()
+  # set(LIBRARY_OUTPUT_PATH lib/arm64/)
+  link_directories(lib/arm64/)
+endif()
 
 include_directories(
     include/${PROJECT_NAME}/
     ${OpenCV_INCLUDE_DIRS}
     ${catkin_INCLUDE_DIRS}
 )
- 
-find_package(OpenCV 4 REQUIRED)
-if(OpenCV_FOUND)
-    include_directories(${OpenCV_INCLUDE_DIR})
-    message(STATUS "OpenCV ${OpenCV_VERSION} FOUND")
-    message(STATUS ${OpenCV_LIBS})
-    if(${OpenCV_VERSION_MAJOR} EQUAL 4)
-        add_definitions(-DOPENCV_VERSION_4)
-    elseif(${OpenCV_VERSION_MAJOR} LESS 4)
-        add_definitions(-DOPENCV_VERSION_3)
-    endif()
-else()
-    message(FATAL_ERROR "OpenCV Library Not Found")
-endif()
 
-if(CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "x86_64")
-    set(LIBRARY_OUTPUT_PATH lib/amd64/)
-    link_directories(lib/amd64/)
-else()
-    set(LIBRARY_OUTPUT_PATH lib/arm64/)
-    link_directories(lib/arm64/)
-endif()
-
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -pthread")
 set(SDK_LIBRARIES unitree_camera tstc_V4L2_xu_camera udev systemlog ${OpenCV_LIBS})
 
 add_executable(camera_node src/camera_node.cpp)
-target_link_libraries(camera_node ${SDK_LIBRARIES} ${catkin_LIBRARIES})
+target_link_libraries(camera_node ${catkin_LIBRARIES} ${SDK_LIBRARIES})
 
 install(
   TARGETS camera_node
