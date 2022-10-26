@@ -49,8 +49,7 @@ int main(int argc, char *argv[])
     cv::Size frameSize(image_width, image_height); 
 
    
-    //-------------------PUBLISHERS--------------------
-
+    //-------------------PUBLISHERS--------------------s
     // TODO insert camera name in topics
 
     // Rectified images

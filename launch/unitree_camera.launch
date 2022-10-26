@@ -8,9 +8,8 @@
     <arg name="publish_raw_rgb" default="True" />
     <arg name="publish_depth" default="True" />
     <arg name="publish_pointcloud" default="True" />
-    <!-- <arg name="publish_camera_info" default="True" /> -->
-    <!-- TODO check if there is a way to publish camera info without saving it in yaml file...... -->
-
+    <arg name="publish_camera_info" default="True" />
+    
     <arg name="fps" default="30" />
     <arg name="image_width" default="1856" />
     <arg name="image_height" default="800" />
