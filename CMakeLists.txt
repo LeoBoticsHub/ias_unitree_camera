@@ -2,27 +2,20 @@ cmake_minimum_required(VERSION 3.0.2)
 project(ias_unitree_camera)
 
 find_package(catkin REQUIRED COMPONENTS
-  #  image_transport
-  #  cv_bridge
   roscpp
-  rospy
-  std_msgs
-  pcl_ros
-  message_generation
-  #  camera_info_manager
+  sensor_msgs
+  cv_bridge
 )
 
 catkin_package(
-    #CATKIN_DEPENDS cv_bridge roscpp rospy std_msgs
-    CATKIN_DEPENDS roscpp rospy std_msgs
+    CATKIN_DEPENDS roscpp sensor_msgs cv_bridge
 )
 
 include_directories(
-    ${PROJECT_SOURCE_DIR}/include/${PROJECT_NAME}/
+    include/${PROJECT_NAME}/
     ${OpenCV_INCLUDE_DIRS}
     ${catkin_INCLUDE_DIRS}
 )
-
  
 find_package(OpenCV 4 REQUIRED)
 if(OpenCV_FOUND)
@@ -39,12 +32,33 @@ else()
 endif()
 
 if(CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "x86_64")
-set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib/amd64/)
-link_directories(${PROJECT_SOURCE_DIR}/lib/amd64/)
+    set(LIBRARY_OUTPUT_PATH lib/amd64/)
+    link_directories(lib/amd64/)
 else()
-set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib/arm64/)
-link_directories(${PROJECT_SOURCE_DIR}/lib/arm64/)
+    set(LIBRARY_OUTPUT_PATH lib/arm64/)
+    link_directories(lib/arm64/)
 endif()
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -pthread")
+set(SDK_LIBRARIES unitree_camera tstc_V4L2_xu_camera udev systemlog ${OpenCV_LIBS})
 
+add_executable(camera_node src/camera_node.cpp)
+target_link_libraries(camera_node ${SDK_LIBRARIES} ${catkin_LIBRARIES})
+
+install(
+  TARGETS camera_node
+  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
+install(
+  DIRECTORY include/${PROJECT_NAME}/
+  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+)
+
+install(
+  DIRECTORY launch/
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
+  PATTERN ".svn" EXCLUDE
+)
