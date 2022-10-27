@@ -94,17 +94,20 @@ int main(int argc, char *argv[])
     // camera info
     ros::Publisher camera_info_pub;
     std::vector<cv::Mat> paramsArray;
+    sensor_msgs::CameraInfo cam_info;
     if (publish_camera_info)
     {
-        camera_info_pub = n.advertise<sensor_msgs::CameraInfo>("camera_info_", 10);
+        camera_info_pub = n.advertise<sensor_msgs::CameraInfo>("camera_info_" + camera_name, 10);
     }
 
     // Pointcloud
     sensor_msgs::PointCloud2 pcd_msg;
+    std::vector<PCLType> pcl_vec;
     ros::Publisher pcd_pub;
+    std::chrono::microseconds t_pcd;
     if (publish_pointcloud)
     {
-        pcd_pub = n.advertise<sensor_msgs::Image>("pcd_", 10);
+        pcd_pub = n.advertise<sensor_msgs::PointCloud2>("pcd_" + camera_name, 10);
     }
 
     // start camera capture
@@ -115,6 +118,7 @@ int main(int argc, char *argv[])
     // TODO complete the publish logic. remember timestamp
     while(ros::ok() && cam.isOpened()){
         image_header.stamp = ros::Time::now();
+        image_header.seq = seq;
         
         // Publish rectified image
         if (publish_rect_rgb)
@@ -169,22 +173,32 @@ int main(int argc, char *argv[])
         if (publish_camera_info)
         {
             if(cam.getCalibParams(paramsArray)){
-            //do something
+                auto intr = paramsArray[0];
+                auto dist = paramsArray[1];
+                cam_info.K[0] = intr.at<double>(0, 0);
+                cam_info.K[1] = intr.at<double>(0, 1);
+                cam_info.K[2] = intr.at<double>(0, 2);
+                cam_info.K[3] = intr.at<double>(1, 0);
+                cam_info.K[4] = intr.at<double>(1, 1);
+                cam_info.K[5] = intr.at<double>(1, 2);
+                cam_info.K[6] = intr.at<double>(2, 0);
+                cam_info.K[7] = intr.at<double>(2, 1);
+                cam_info.K[8] = intr.at<double>(2, 2);
+
+                cam_info.header = image_header;
             }
+            camera_info_pub.publish(cam_info);
         }
 
         // Publish camera pointcloud
         if (publish_pointcloud)
         {
-            // // get rgb colored poincloud
-            // std::vector<PCLType> pcl_vec;
-            // if(!cam.getPointCloud(pcl_vec, t)){
-            //     usleep(1000);
-            //     continue;
-            // }
+            // get rgb colored poincloud
+            if(cam.getPointCloud(pcl_vec, t_pcd)){
+                
+            }
+            pcd_pub.publish(pcd_msg);
         }
-
-
 
         seq++;
         ros::spinOnce();
