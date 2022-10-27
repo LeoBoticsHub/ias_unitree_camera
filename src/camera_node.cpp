@@ -11,8 +11,12 @@
 
 int main(int argc, char *argv[])
 {
+    //TODO init camera_name from argv[1]
+    std::string camera_name;
+    std::string camera_node_name{"camera_"+camera_name+"_node"};
+
     // node init
-    ros::init(argc, argv, "camera_node");
+    ros::init(argc, argv, camera_node_name);
     ros::NodeHandle n("~");
 
     // init UnitreeCamera object by camera index
@@ -21,9 +25,6 @@ int main(int argc, char *argv[])
     ROS_INFO("Connecting to camera");
     UnitreeCamera cam(camera_idx);
     ROS_INFO("Camera connected");
-
-    // TODO add enum to choose between cameras names
-    std::string camera_name;
 
     // check if the camera has been started correctly
     if(!cam.isOpened())
@@ -51,7 +52,6 @@ int main(int argc, char *argv[])
     cv::Size frameSize(image_width, image_height); 
    
     //-------------------PUBLISHERS--------------------
-    // TODO insert camera name in topics
     std_msgs::Header image_header;
     image_header.frame_id = "camera_optical_" + camera_name;
 
