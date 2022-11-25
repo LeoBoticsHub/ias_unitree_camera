@@ -82,7 +82,7 @@ int main(int argc, char *argv[])
     image_header.frame_id = "camera_optical_" + camera_name;
 
     // Rectified images
-    cv::Mat left_rect_image, right_rect_image, feim_rect_image;
+    cv::Mat temp_left_rect_image, temp_right_rect_image, left_rect_image, right_rect_image, feim_rect_image;
     std::chrono::microseconds t_rect;
     sensor_msgs::ImagePtr left_rect_image_msg, right_rect_image_msg;
     ros::Publisher left_rect_image_pub, right_rect_image_pub;
@@ -94,7 +94,7 @@ int main(int argc, char *argv[])
     }
 
     // Raw images
-    cv::Mat left_raw_image, right_raw_image, feim_raw_image;
+    cv::Mat temp_left_raw_image, temp_right_raw_image, left_raw_image, right_raw_image, feim_raw_image;
     sensor_msgs::ImagePtr left_raw_image_msg, right_raw_image_msg;
     std::chrono::microseconds t_raw;
     ros::Publisher left_raw_image_pub, right_raw_image_pub;
@@ -108,7 +108,7 @@ int main(int argc, char *argv[])
     }
 
     // Depth Image
-    cv::Mat depth_image;
+    cv::Mat temp_depth_image, depth_image;
     sensor_msgs::ImagePtr depth_image_msg;
     ros::Publisher depth_image_pub;
     std::chrono::microseconds t_depth;
@@ -155,11 +155,13 @@ int main(int argc, char *argv[])
         // Publish rectified image
         if (publish_rect_rgb)
         {
-            if(cam.getRectStereoFrame(left_rect_image, right_rect_image, feim_rect_image))
+            if(cam.getRectStereoFrame(temp_left_rect_image, temp_right_rect_image, feim_rect_image))
             {
+                cv::flip(temp_left_rect_image, left_rect_image, 0);
                 left_rect_image_msg = cv_bridge::CvImage(image_header, "bgr8", left_rect_image).toImageMsg();
                 left_rect_image_pub.publish(left_rect_image_msg);
 
+                cv::flip(temp_right_rect_image, right_rect_image, 0);
                 right_rect_image_msg = cv_bridge::CvImage(image_header, "bgr8", right_rect_image).toImageMsg();
                 right_rect_image_pub.publish(right_rect_image_msg);
             }
@@ -172,11 +174,13 @@ int main(int argc, char *argv[])
         // Publish raw image
         if (publish_raw_rgb)
         {
-            if(cam.getStereoFrame(left_raw_image, right_raw_image, t_rect))
+            if(cam.getStereoFrame(temp_left_raw_image, temp_right_raw_image, t_rect))
             {
+                cv::flip(temp_left_raw_image, left_raw_image, 0);
                 left_raw_image_msg = cv_bridge::CvImage(image_header, "bgr8", left_raw_image).toImageMsg();
                 left_raw_image_pub.publish(left_raw_image_msg);
 
+                cv::flip(temp_right_raw_image, right_raw_image, 0);
                 right_raw_image_msg = cv_bridge::CvImage(image_header, "bgr8", right_raw_image).toImageMsg();
                 right_raw_image_pub.publish(right_raw_image_msg);
             }
@@ -189,8 +193,9 @@ int main(int argc, char *argv[])
         // Publish depth image
         if (publish_depth)
         {
-            if(cam.getDepthFrame(depth_image, false, t_depth))
+            if(cam.getDepthFrame(temp_depth_image, false, t_depth))
             {
+                cv::flip(temp_depth_image, depth_image, 0);
                 depth_image_msg = cv_bridge::CvImage(image_header, "mono16", depth_image).toImageMsg();
                 depth_image_pub.publish(depth_image_msg);
             }
