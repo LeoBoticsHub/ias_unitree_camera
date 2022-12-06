@@ -44,7 +44,7 @@ int main(int argc, char *argv[])
     } 
     else 
     {
-        ROS_ERROR("camera_name [%s] does not exists. Choose between [head/chin/left/right/rearDown].", camera_name);
+        ROS_ERROR("camera_name [%s] does not exists. Choose between [head/chin/left/right/rearDown].", camera_name.c_str());
         exit(1);
     }
 
