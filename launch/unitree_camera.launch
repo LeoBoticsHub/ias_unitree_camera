@@ -11,6 +11,7 @@
     <arg name="image_width" default="1856" />
     <arg name="image_height" default="800" />
     <arg name="camera_name" default="None" />
+    <arg name="ros_rate" default="30" />
 
     <!-- Ultrasound node -->
     <node name="camera_$(arg camera_name)" pkg="ias_unitree_camera" type="camera_node" args="$(arg camera_name)" respawn="false" output="screen">
@@ -22,6 +23,7 @@
         <param name="fps" value="$(arg fps)" />
         <param name="image_width" value="$(arg image_width)" />
         <param name="image_height" value="$(arg image_height)" />
+        <param name="ros_rate" value="$(arg ros_rate)" />
     </node>
 
 </launch>

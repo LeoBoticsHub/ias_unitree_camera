@@ -61,12 +61,14 @@ int main(int argc, char *argv[])
 
     bool publish_rect_rgb, publish_raw_rgb, publish_depth;
     bool publish_pointcloud, publish_camera_info;
+    double ros_rate;
 
     n.getParam("publish_rect_rgb", publish_rect_rgb);
     n.getParam("publish_raw_rgb", publish_raw_rgb);
     n.getParam("publish_depth", publish_depth);
     n.getParam("publish_camera_info", publish_camera_info);
     n.getParam("publish_pointcloud", publish_pointcloud);
+    n.getParam("ros_rate", ros_rate);
 
     int image_width, image_height, fps;
 
@@ -146,7 +148,8 @@ int main(int argc, char *argv[])
     cam.startStereoCompute(); // start disparity computing
 
     int seq;
-  
+    ros::Rate loop_rate(ros_rate);
+
 
     while(ros::ok() && cam.isOpened()){
         image_header.stamp = ros::Time::now();
@@ -263,6 +266,8 @@ int main(int argc, char *argv[])
         }
 
         seq++;
+
+        loop_rate.sleep();
         ros::spinOnce();
     }
 
