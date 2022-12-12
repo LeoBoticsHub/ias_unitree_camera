@@ -160,13 +160,13 @@ int main(int argc, char *argv[])
         {
             if(cam.getRectStereoFrame(temp_left_rect_image, temp_right_rect_image, feim_rect_image))
             {
-                if (camera_name.compare("face") == 0)
-                    cv::flip(temp_left_rect_image, left_rect_image, 0);
+                
+                cv::flip(temp_left_rect_image, left_rect_image, 0);
                 left_rect_image_msg = cv_bridge::CvImage(image_header, "bgr8", left_rect_image).toImageMsg();
                 left_rect_image_pub.publish(left_rect_image_msg);
                  
-                if (camera_name.compare("face") == 0)
-                    cv::flip(temp_right_rect_image, right_rect_image, 0);
+                
+                cv::flip(temp_right_rect_image, right_rect_image, 0);
                 right_rect_image_msg = cv_bridge::CvImage(image_header, "bgr8", right_rect_image).toImageMsg();
                 right_rect_image_pub.publish(right_rect_image_msg);
             }
