@@ -15,7 +15,36 @@
 #include <string>
 
 // dictionary containing camera names and corresponding indexes
-std::map<std::string, int> _camera_dict{{"face", 1}, {"chin", 0}, {"right", 0}, {"left", 1}, {"rearDown", 0}}; 
+std::map<std::string, int> _camera_dict{{"face", 1}, {"chin", 0}, {"right", 0}, {"left", 1}, {"rearDown", 0}};
+
+// @param left_camera: true - right camera info params, false - left camera info params
+sensor_msgs::CameraInfo get_camera_info(bool right_camera)
+{
+    std::vector<cv::Mat> paramsArray;
+    bool params_received;
+    sensor_msgs::CameraInfo cam_info;
+
+    do
+    {
+        params_received = cam.getCalibParams(paramsArray, right_camera);
+        ROS_WARN_THROTTLE(3, "Waiting for left_camera_info messages.");
+    } while (!params_received);
+    ROS_INFO("camera_info messages received.");
+
+    auto intr = paramsArray[0];
+    // auto dist = paramsArray[1];
+    cam_info.K[0] = intr.at<double>(0, 0);
+    cam_info.K[1] = intr.at<double>(0, 1);
+    cam_info.K[2] = intr.at<double>(0, 2);
+    cam_info.K[3] = intr.at<double>(1, 0);
+    cam_info.K[4] = intr.at<double>(1, 1);
+    cam_info.K[5] = intr.at<double>(1, 2);
+    cam_info.K[6] = intr.at<double>(2, 0);
+    cam_info.K[7] = intr.at<double>(2, 1);
+    cam_info.K[8] = intr.at<double>(2, 2);
+
+    return cam_info;
+}
 
 int main(int argc, char *argv[])
 {
@@ -78,12 +107,14 @@ int main(int argc, char *argv[])
 
     // set frame size (default: 1856, 800)
     cv::Size frameSize(image_width, image_height); 
-   
-    //-------------------PUBLISHERS--------------------
+    
+    // -----------------------------------------------------
+    // -   Camera variables and publisher initialization   -
+    // -----------------------------------------------------
     std_msgs::Header image_header;
     image_header.frame_id = "camera_optical_" + camera_name;
 
-    // Rectified images
+    // --------------Rectified images--------------
     cv::Mat temp_left_rect_image, temp_right_rect_image, left_rect_image, right_rect_image, feim_rect_image;
     std::chrono::microseconds t_rect;
     sensor_msgs::ImagePtr left_rect_image_msg, right_rect_image_msg;
@@ -95,7 +126,7 @@ int main(int argc, char *argv[])
         right_rect_image_pub = n.advertise<sensor_msgs::Image>("right_rect_image" , 10);
     }
 
-    // Raw images
+    // --------------Raw images--------------
     cv::Mat temp_left_raw_image, temp_right_raw_image, left_raw_image, right_raw_image, feim_raw_image;
     sensor_msgs::ImagePtr left_raw_image_msg, right_raw_image_msg;
     std::chrono::microseconds t_raw;
@@ -109,7 +140,7 @@ int main(int argc, char *argv[])
         right_raw_image_pub = n.advertise<sensor_msgs::Image>("right_raw_image" , 10);
     }
 
-    // Depth Image
+    // --------------Depth Image--------------
     cv::Mat temp_depth_image, depth_image;
     sensor_msgs::ImagePtr depth_image_msg;
     ros::Publisher depth_image_pub;
@@ -119,16 +150,20 @@ int main(int argc, char *argv[])
         depth_image_pub = n.advertise<sensor_msgs::Image>("depth_image" , 10);  
     }
 
-    // camera info
-    ros::Publisher camera_info_pub;
-    std::vector<cv::Mat> paramsArray;
-    sensor_msgs::CameraInfo cam_info;
+    // --------------camera info--------------
+    ros::Publisher left_camera_info_pub, right_camera_info_pub;
+    sensor_msgs::CameraInfo left_cam_info, right_cam_info;
     if (publish_camera_info)
     {
-        camera_info_pub = n.advertise<sensor_msgs::CameraInfo>("camera_info", 10);
+
+        left_cam_info = get_camera_info(false);
+        right_cam_info = get_camera_info(true);
+
+        right_camera_info_pub = n.advertise<sensor_msgs::CameraInfo>("right_cam_info", 10);
+        left_camera_info_pub = n.advertise<sensor_msgs::CameraInfo>("left_camera_info", 10);
     }
 
-    // Pointcloud
+    // --------------Pointcloud--------------
     sensor_msgs::PointCloud2 pcd_msg;
     std::vector<PCLType> pcl_vec;
     ros::Publisher pcd_pub;
@@ -143,19 +178,24 @@ int main(int argc, char *argv[])
         pcd_pub = n.advertise<sensor_msgs::PointCloud2>("pointcloud", 10);
     }
 
-    // start camera capture
+    // ------------------------
+    // - start camera capture -
+    // ------------------------
+
     cam.startCapture(); // disable image h264 encoding and share memory sharing
     cam.startStereoCompute(); // start disparity computing
 
     int seq;
     ros::Rate loop_rate(ros_rate);
 
-
+    // -------------------------
+    // -  while loop starting  -
+    // -------------------------
     while(ros::ok() && cam.isOpened()){
         image_header.stamp = ros::Time::now();
         image_header.seq = seq;
         
-        // Publish rectified image
+        // -------------Rectified image-------------
         if (publish_rect_rgb)
         {
             if(cam.getRectStereoFrame(temp_left_rect_image, temp_right_rect_image, feim_rect_image))
@@ -176,7 +216,7 @@ int main(int argc, char *argv[])
             }
         }
 
-        // Publish raw image
+        // -------------Raw image-------------
         if (publish_raw_rgb)
         {
             if(cam.getStereoFrame(temp_left_raw_image, temp_right_raw_image, t_rect))
@@ -195,7 +235,7 @@ int main(int argc, char *argv[])
             }
         }
 
-        // Publish depth image
+        // -------------Depth image-------------
         if (publish_depth)
         {
             if(cam.getDepthFrame(temp_depth_image, false, t_depth))
@@ -210,28 +250,14 @@ int main(int argc, char *argv[])
             }
         }
 
-        // Publish camera prameters
+        // -------------Camera Info parameters-------------
         if (publish_camera_info)
         {
-            if(cam.getCalibParams(paramsArray)){
-                auto intr = paramsArray[0];
-                auto dist = paramsArray[1];
-                cam_info.K[0] = intr.at<double>(0, 0);
-                cam_info.K[1] = intr.at<double>(0, 1);
-                cam_info.K[2] = intr.at<double>(0, 2);
-                cam_info.K[3] = intr.at<double>(1, 0);
-                cam_info.K[4] = intr.at<double>(1, 1);
-                cam_info.K[5] = intr.at<double>(1, 2);
-                cam_info.K[6] = intr.at<double>(2, 0);
-                cam_info.K[7] = intr.at<double>(2, 1);
-                cam_info.K[8] = intr.at<double>(2, 2);
-
-                cam_info.header = image_header;
-            }
-            camera_info_pub.publish(cam_info);
+            left_camera_info_pub.publish(left_cam_info);
+            right_camera_info_pub.publish(right_cam_info);
         }
 
-        // Publish camera pointcloud
+        // -------------Camera pointcloud-------------
         if (publish_pointcloud)
         {
             // empty pcl_vector
@@ -264,6 +290,7 @@ int main(int argc, char *argv[])
             }
             pcd_pub.publish(pcd_msg);
         }
+        // ------------------------------------------
 
         seq++;
 
@@ -271,6 +298,9 @@ int main(int argc, char *argv[])
         ros::spinOnce();
     }
 
+    // -----------------------
+    // - stop camera capture -
+    // -----------------------
     cam.stopStereoCompute();  // stop disparity computing 
     cam.stopCapture(); // stop camera capturing
 
