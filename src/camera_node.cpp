@@ -37,7 +37,7 @@
 std::map<std::string, int> _camera_dict{{"face", 1}, {"chin", 0}, {"right", 0}, {"left", 1}, {"rearDown", 0}};
 
 // @param left_camera: true - right camera info params, false - left camera info params
-sensor_msgs::CameraInfo get_camera_info(bool right_camera)
+sensor_msgs::CameraInfo get_camera_info(UnitreeCamera& cam, bool right_camera)
 {
     std::vector<cv::Mat> paramsArray;
     bool params_received;
@@ -178,8 +178,8 @@ int main(int argc, char *argv[])
     if (publish_camera_info)
     {
 
-        left_cam_info = get_camera_info(false);
-        right_cam_info = get_camera_info(true);
+        left_cam_info = get_camera_info(cam, false);
+        right_cam_info = get_camera_info(cam, true);
 
         right_camera_info_pub = n.advertise<sensor_msgs::CameraInfo>("right_cam_info", 10);
         left_camera_info_pub = n.advertise<sensor_msgs::CameraInfo>("left_camera_info", 10);
@@ -220,18 +220,32 @@ int main(int argc, char *argv[])
         // -------------Rectified image-------------
         if (publish_rect_rgb)
         {
-            if(cam.getRectStereoFrame(temp_left_rect_image, temp_right_rect_image, feim_rect_image))
+            if(cam.getRectStereoFrame(temp_right_rect_image, temp_left_rect_image, feim_rect_image))
             {
-                if (flip_x)
+	        if (!flip_x && !flip_y)
+		{
+			left_rect_image = temp_left_rect_image;
+			right_rect_image = temp_right_rect_image;
+		}
+                else if (flip_x && !flip_y)
                 {
                     cv::flip(temp_left_rect_image, left_rect_image, 0);
                     cv::flip(temp_right_rect_image, right_rect_image, 0);
                 }
-                if (flip_y)
+                else if (!flip_x && flip_y)
                 {
                     cv::flip(temp_left_rect_image, left_rect_image, 1);
                     cv::flip(temp_right_rect_image, right_rect_image, 1);
                 }
+		else // flip both x and y
+		{
+                    cv::flip(temp_left_rect_image, left_rect_image, 0);
+                    cv::flip(temp_right_rect_image, right_rect_image, 0);
+		    temp_left_rect_image = left_rect_image;
+                    temp_right_rect_image = right_rect_image;
+                    cv::flip(temp_left_rect_image, left_rect_image, 1);
+                    cv::flip(temp_right_rect_image, right_rect_image, 1);
+		}
 
                 // left rect image publish
                 left_rect_image_msg = cv_bridge::CvImage(image_header, "bgr8", left_rect_image).toImageMsg();
@@ -250,19 +264,8 @@ int main(int argc, char *argv[])
         // -------------Raw image-------------
         if (publish_raw_rgb)
         {
-            if(cam.getStereoFrame(temp_left_raw_image, temp_right_raw_image, t_rect))
+            if(cam.getStereoFrame(right_raw_image, left_raw_image, t_rect))
             {
-                if (flip_x)
-                {
-                    cv::flip(temp_left_raw_image, left_raw_image, 0);
-                    cv::flip(temp_right_raw_image, right_raw_image, 0);
-                }
-                if (flip_y)
-                {
-                    cv::flip(temp_left_raw_image, left_raw_image, 1);
-                    cv::flip(temp_right_raw_image, right_raw_image, 1);
-                }
-
                 // left raw image publish
                 left_raw_image_msg = cv_bridge::CvImage(image_header, "bgr8", left_raw_image).toImageMsg();
                 left_raw_image_pub.publish(left_raw_image_msg);
@@ -291,6 +294,30 @@ int main(int argc, char *argv[])
                     cv::flip(temp_depth_image, depth_image, 1);
                 }
 
+		if (!flip_x && !flip_y)
+		{
+			depth_image = temp_depth_image;
+		}
+
+	        if (!flip_x && !flip_y)
+		{
+			depth_image = temp_depth_image;
+		}
+                else if (flip_x && !flip_y)
+                {
+                    cv::flip(temp_depth_image, depth_image, 0);
+                }
+                else if (!flip_x && flip_y)
+                {
+                    cv::flip(temp_depth_image, depth_image, 1);
+                }
+		else // flip both x and y
+		{
+                    cv::flip(temp_depth_image, depth_image, 0);
+		    temp_depth_image = depth_image;
+                    cv::flip(temp_depth_image, depth_image, 1);
+		}
+
                 // depth image publish
                 depth_image_msg = cv_bridge::CvImage(image_header, "mono16", depth_image).toImageMsg();
                 depth_image_pub.publish(depth_image_msg);
@@ -304,6 +331,8 @@ int main(int argc, char *argv[])
         // -------------Camera Info parameters-------------
         if (publish_camera_info)
         {
+            left_cam_info.header = image_header;
+            right_cam_info.header = image_header;
             left_camera_info_pub.publish(left_cam_info);
             right_camera_info_pub.publish(right_cam_info);
         }
