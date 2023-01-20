@@ -90,6 +90,7 @@ int main(int argc, char *argv[])
 
     bool publish_rect_rgb, publish_raw_rgb, publish_depth;
     bool publish_pointcloud, publish_camera_info;
+    bool flip_x, flip_y;
     double ros_rate;
 
     n.getParam("publish_rect_rgb", publish_rect_rgb);
@@ -97,6 +98,8 @@ int main(int argc, char *argv[])
     n.getParam("publish_depth", publish_depth);
     n.getParam("publish_camera_info", publish_camera_info);
     n.getParam("publish_pointcloud", publish_pointcloud);
+    n.getParam("flip_x", flip_x);
+    n.getParam("flip_y", flip_y);
     n.getParam("ros_rate", ros_rate);
 
     int image_width, image_height, fps;
@@ -200,13 +203,22 @@ int main(int argc, char *argv[])
         {
             if(cam.getRectStereoFrame(temp_left_rect_image, temp_right_rect_image, feim_rect_image))
             {
-                
-                cv::flip(temp_left_rect_image, left_rect_image, 0);
+                if (flip_x)
+                {
+                    cv::flip(temp_left_rect_image, left_rect_image, 0);
+                    cv::flip(temp_right_rect_image, right_rect_image, 0);
+                }
+                if (flip_y)
+                {
+                    cv::flip(temp_left_rect_image, left_rect_image, 1);
+                    cv::flip(temp_right_rect_image, right_rect_image, 1);
+                }
+
+                // left rect image publish
                 left_rect_image_msg = cv_bridge::CvImage(image_header, "bgr8", left_rect_image).toImageMsg();
                 left_rect_image_pub.publish(left_rect_image_msg);
-                 
-                
-                cv::flip(temp_right_rect_image, right_rect_image, 0);
+
+                // right rect image publish
                 right_rect_image_msg = cv_bridge::CvImage(image_header, "bgr8", right_rect_image).toImageMsg();
                 right_rect_image_pub.publish(right_rect_image_msg);
             }
@@ -221,11 +233,22 @@ int main(int argc, char *argv[])
         {
             if(cam.getStereoFrame(temp_left_raw_image, temp_right_raw_image, t_rect))
             {
-                cv::flip(temp_left_raw_image, left_raw_image, 0);
+                if (flip_x)
+                {
+                    cv::flip(temp_left_raw_image, left_raw_image, 0);
+                    cv::flip(temp_right_raw_image, right_raw_image, 0);
+                }
+                if (flip_y)
+                {
+                    cv::flip(temp_left_raw_image, left_raw_image, 1);
+                    cv::flip(temp_right_raw_image, right_raw_image, 1);
+                }
+
+                // left raw image publish
                 left_raw_image_msg = cv_bridge::CvImage(image_header, "bgr8", left_raw_image).toImageMsg();
                 left_raw_image_pub.publish(left_raw_image_msg);
 
-                cv::flip(temp_right_raw_image, right_raw_image, 0);
+                // right raw image publish
                 right_raw_image_msg = cv_bridge::CvImage(image_header, "bgr8", right_raw_image).toImageMsg();
                 right_raw_image_pub.publish(right_raw_image_msg);
             }
@@ -240,7 +263,16 @@ int main(int argc, char *argv[])
         {
             if(cam.getDepthFrame(temp_depth_image, false, t_depth))
             {
-                cv::flip(temp_depth_image, depth_image, 0);
+                if (flip_x)
+                {
+                    cv::flip(temp_depth_image, depth_image, 0);
+                }
+                if (flip_y)
+                {
+                    cv::flip(temp_depth_image, depth_image, 1);
+                }
+
+                // depth image publish
                 depth_image_msg = cv_bridge::CvImage(image_header, "mono16", depth_image).toImageMsg();
                 depth_image_pub.publish(depth_image_msg);
             }
