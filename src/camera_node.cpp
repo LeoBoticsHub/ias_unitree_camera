@@ -1,3 +1,22 @@
+/*----------------------------------------------------------------------------------------------------------------------------------
+# Copyright (C) 2022, Federico Rollo
+#
+# Institute: Leonardo Labs (Leonardo S.p.a)
+#
+# This file is part of ias_unitree_camera. <https://github.com/FedericoRollo/followme>
+#
+# ias_unitree_camera is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# ias_unitree_camera is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License. If not, see http://www.gnu.org/licenses/
+---------------------------------------------------------------------------------------------------------------------------------*/
 #include <UnitreeCameraSDK.hpp>
 #include <unistd.h>
 
