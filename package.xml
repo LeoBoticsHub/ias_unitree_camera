@@ -3,9 +3,11 @@
   <name>ias_unitree_camera</name>
   <version>0.0.0</version>
   <description>The camera package for streaming cameras and pointcloud on ros</description>
-  <maintainer email="rollo.f96@gmail.com">Federico Rollo</maintainer>
 
-  <license>TODO</license>
+  <maintainer email="rollo.f96@gmail.com">Federico Rollo</maintainer>
+  <author>Federico Rollo</author>
+
+  <license>GPLv3</license>
 
   <buildtool_depend>catkin</buildtool_depend>
 

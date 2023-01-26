@@ -1,9 +1,12 @@
 /*----------------------------------------------------------------------------------------------------------------------------------
-# Copyright (C) 2022, Federico Rollo
+# Copyright (C) 2022
 #
-# Institute: Leonardo Labs (Leonardo S.p.a)
+# Author: Federico Rollo
+# Mail: rollo.f96@gmail.com
 #
-# This file is part of ias_unitree_camera. <https://github.com/FedericoRollo/followme>
+# Institute: Leonardo Labs (Leonardo S.p.a - Instituto Italiano di Tecnologia)
+#
+# This file is part of ias_unitree_camera. <https://github.com/IASRobolab/ias_unitree_camera>
 #
 # ias_unitree_camera is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
